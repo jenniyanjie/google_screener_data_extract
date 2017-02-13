@@ -1,5 +1,5 @@
 import os, re, sys, time, datetime, copy, calendar
-import pandas
+import pandas, pdb
 import simplejson as json
 from pattern.web import URL, extension, cache, plaintext, Newsfeed
 
@@ -14,7 +14,7 @@ class WebJsonRetrieval(object):
 
         """
         ## parameters
-        self.saved_json_file = r'c:\data\temptryyql.json'
+        self.saved_json_file = r'./temptryyql.json'
         self.target_tag = '' #use to identify the json data needed
 
         ## Result dataframe
@@ -40,8 +40,10 @@ class WebJsonRetrieval(object):
         cache.clear()
         url = URL(self.com_data_full_url)
         f = open(self.saved_json_file, 'wb') # save as test.gif
+#        pdb.set_trace()
         try:
             url_data = url.download(timeout = 50)
+#            print 'download OK!'
         except:
             url_data = ''
 

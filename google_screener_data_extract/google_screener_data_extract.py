@@ -13,14 +13,11 @@
 
     Exchange str:
     SGX (default)
-    NYSEMKT
-    OTCMKTS
-    NYSEARCA
-    NASDAQ
+    HKG
 
 """
 import os, re, sys, time, datetime, copy, calendar
-import pandas
+import pandas, pdb
 from pattern.web import URL, extension, cache, plaintext
 from jsonwebretrieve import WebJsonRetrieval
 import simplejson as json
@@ -29,19 +26,19 @@ class GoogleStockDataExtract(object):
     """
         Target url need to be rotate and join separately.
     """
-    def __init__(self):
+    def __init__(self, exchange = 'SGX'):
         """ 
 
         """
         ## url parameters for joining
         self.target_url_start = 'https://www.google.com/finance?output=json&start=0&num=3000&noIL=1&q=[%28exchange%20%3D%3D%20%22#$%22%29%20%26%20%28'
-        self.target_exchange = 'SGX' #default
+        self.target_exchange = exchange
         #self.target_url_start = 'https://www.google.com/finance?output=json&start=0&num=3000&noIL=1&q=[%28exchange%20%3D%3D%20%22NASDAQ%22%29%20%26%20%28'
-        self.target_url_end = ']&restype=company&ei=BjE7VZmkG8XwuASFn4CoDg'
+        self.target_url_end = ']&restype=company&ei=nX-hWOiEAY66ugS6k6PADg' # new
         self.temp_url_mid = ''
         self.target_full_url = ''
         current_script_folder = os.path.dirname(os.path.realpath(__file__))
-        self.mid_url_list_filepath = os.path.join(current_script_folder,'googlescreen_url.txt')
+        self.mid_url_list_filepath = os.path.join(current_script_folder,(self.target_exchange + '_googlescreen_url.txt'))
 
         with open(self.mid_url_list_filepath, 'r') as f:
             url_data =f.readlines()
@@ -49,7 +46,7 @@ class GoogleStockDataExtract(object):
         self.mid_url_list = [n.strip('\n') for n in url_data]
 
         ## parameters
-        self.saved_json_file = r'c:\data\temptryyql.json'
+        self.saved_json_file = r'./temptryyql.json'
         self.target_tag = 'searchresults' #use to identify the json data needed
 
         ## Result dataframe
@@ -76,6 +73,11 @@ class GoogleStockDataExtract(object):
     def retrieve_stockdata(self):
         """ Retrieve the json file based on the self.target_full_url"""
         ds = WebJsonRetrieval()
+        
+#        print '======================='
+#        print self.target_full_url
+#        print '\n'
+
         ds.set_url(self.target_full_url)
         ds.download_json() # default r'c:\data\temptryyql.json'
 
@@ -124,7 +126,6 @@ class GoogleStockDataExtract(object):
                 self.result_google_ext_df = temp_data_df
             else:
                 self.result_google_ext_df =  pandas.merge(self.result_google_ext_df, temp_data_df, on=['SYMBOL','CompanyName'])
-
         self.rename_columns() 
 
     def rename_columns(self):
@@ -136,14 +137,17 @@ class GoogleStockDataExtract(object):
         self.result_google_ext_df['PE'] = self.result_google_ext_df['PE'].astype('float')
         self.result_google_ext_df['TotalDebtToEquityYear'] = self.result_google_ext_df['TotalDebtToEquityYear'].str.replace(',','')
         self.result_google_ext_df['TotalDebtToEquityYear'] = self.result_google_ext_df['TotalDebtToEquityYear'].astype('float')
-        
-        self.result_google_ext_df = self.result_google_ext_df.rename(columns={'CompanyName':'GS_CompanyName',
-                                                                                 'AverageVolume':'GS_AverageVolume',
-                                                                                 'Volume':'GS_Volume',
-                                                                                 'AINTCOV':'Interest_coverage',
-                                                                                 'DividendYield':'TRAILINGANNUALDIVIDENDYIELDINPERCENT',
-                                                                                 'PE':'PERATIO', 'TotalDebtToEquityYear':'TotalDebtEquity',
-                                                                                  'PriceToBook':'PRICEBOOK','CurrentRatioYear':'CurrentRatio',
+#        pdb.set_trace()
+        self.result_google_ext_df = self.result_google_ext_df.rename(columns={
+#            'CompanyName':'GS_CompanyName',
+#             'AverageVolume':'GS_AverageVolume',
+#             'Volume':'GS_Volume',
+             'AINTCOV':'Interest_coverage'
+#             'DividendYield':'TRAILINGANNUALDIVIDENDYIELDINPERCENT',
+#             'PE':'PERATIO', 
+#             'TotalDebtToEquityYear':'TotalDebttoEquity',
+#             'PriceToBook':'PRICEBOOK',
+#             'CurrentRatioYear':'CurrentRatio',
                                                                                 })
 
 if __name__ == '__main__':
@@ -151,10 +155,9 @@ if __name__ == '__main__':
     choice  = 2
 
     if choice == 2:
-        hh = GoogleStockDataExtract()
-        hh.target_exchange = 'NASDAQ'
+        hh = GoogleStockDataExtract('HKG')
         hh.retrieve_all_stock_data()
         
         print hh.result_google_ext_df.head()
-        hh.result_google_ext_df.to_csv(r'c:\data\temp.csv', index =False)
+        hh.result_google_ext_df.to_csv(r'./temp.csv', index =False)
 
